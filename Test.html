@@ -1,0 +1,511 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monthly Indian Grocery Survey</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f8f9fb;
+      --card: #ffffff;
+      --accent: #0a7cff;
+      --border: #e4e7eb;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --ok: #16a34a;
+      --warn: #ef4444;
+    }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, Noto Sans, "Apple Color Emoji", "Segoe UI Emoji";
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+    }
+    .container {
+      max-width: 960px;
+      margin: 40px auto;
+      padding: 0 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.04);
+      margin-bottom: 24px;
+      overflow: hidden;
+    }
+    .card header {
+      background: #f3f4f6;
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--border);
+      font-weight: 700;
+    }
+    .card .content {
+      padding: 18px;
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 120px 120px auto;
+      gap: 10px;
+      align-items: center;
+    }
+    .grid.header {
+      font-weight: 600;
+      color: var(--muted);
+    }
+    .grid + .grid {
+      margin-top: 8px;
+    }
+    input[type="text"], input[type="number"], textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-size: 14px;
+      background: #fff;
+    }
+    input[type="number"] {
+      -moz-appearance: textfield;
+    }
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
+      -webkit-appearance: none;
+      margin: 0;
+    }
+    .qty-unit {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .btn {
+      appearance: none;
+      background: var(--accent);
+      color: #fff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn.secondary {
+      background: #e5e7eb;
+      color: #111827;
+    }
+    .btn.link {
+      background: transparent;
+      color: var(--accent);
+      border: none;
+      padding: 0;
+      text-decoration: underline;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    .flex {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .priority-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      border: 1px dashed var(--border);
+      border-radius: 10px;
+      background: #fafafa;
+    }
+    .priority-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      background: #fff;
+      cursor: grab;
+    }
+    .priority-item:last-child {
+      border-bottom: none;
+    }
+    .handle {
+      font-size: 18px;
+      color: var(--muted);
+      user-select: none;
+    }
+    .pill {
+      font-size: 12px;
+      color: #374151;
+      background: #eef2ff;
+      border: 1px solid #e0e7ff;
+      border-radius: 999px;
+      padding: 4px 8px;
+    }
+    .muted {
+      color: var(--muted);
+      font-size: 13px;
+    }
+    .footer-actions {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 0;
+    }
+    .status {
+      font-weight: 600;
+    }
+    .status.ok { color: var(--ok); }
+    .status.warn { color: var(--warn); }
+    .note {
+      font-size: 13px;
+      color: var(--muted);
+      margin-top: 8px;
+    }
+    .section-actions {
+      margin-top: 10px;
+    }
+    @media (max-width: 700px) {
+      .grid {
+        grid-template-columns: 1fr 120px 120px;
+      }
+      .grid .remove-col {
+        grid-column: span 3 / -1;
+      }
+      .footer-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+    }
+    .summary {
+      white-space: pre-wrap;
+      background: #0b1220;
+      color: #e5e7eb;
+      padding: 14px;
+      border-radius: 8px;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+    .small {
+      font-size: 12px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Monthly Indian Grocery Survey</h1>
+    <p class="muted">Please fill this form to help us plan monthly groceries for your family.</p>
+
+    <!-- SECTION 1: Select items & quantity -->
+    <div class="card" id="section-items">
+      <header>1) Select Items & Enter Monthly Quantity</header>
+      <div class="content">
+        <div class="grid header">
+          <div>Item</div>
+          <div>Quantity</div>
+          <div>Unit</div>
+          <div class="remove-col">Action</div>
+        </div>
+
+        <!-- Items Grid -->
+        <div id="itemsGrid"></div>
+
+        <!-- Add custom item -->
+        <div class="section-actions">
+          <div class="flex">
+            <input type="text" id="newItemName" placeholder="Add a custom item (e.g., Poha, Rava, Jaggery)" />
+            <div class="qty-unit">
+              <input type="number" id="newItemQty" min="0" step="0.25" placeholder="Qty" />
+              <select id="newItemUnit">
+                <option value="kg">kg</option>
+                <option value="g">g</option>
+                <option value="litre">litre</option>
+                <option value="ml">ml</option>
+                <option value="pack">pack</option>
+                <option value="pcs">pcs</option>
+              </select>
+            </div>
+            <button class="btn" type="button" id="addItemBtn">+ Add Item</button>
+          </div>
+          <p class="note">Tip: Enter quantities you expect to need for an entire month.</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECTION 2: Missing items -->
+    <div class="card">
+      <header>2) Any Grocery Item Missing?</header>
+      <div class="content">
+        <textarea id="missingItems" rows="3" placeholder="Type any items we missed here..."></textarea>
+        <p class="note">You can list multiple items separated by commas.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 3: Priority ranking -->
+    <div class="card">
+      <header>3) Priority of Must-Have Items (Drag to Reorder)</header>
+      <div class="content">
+        <p class="muted small">Drag items up/down to set what’s most important for your family.</p>
+        <ul id="priorityList" class="priority-list"></ul>
+        <p class="note">Top items will be treated as highest priority.</p>
+      </div>
+    </div>
+
+    <!-- SECTION 4: Items to bring from India -->
+    <div class="card">
+      <header>4) Items You Prefer to Bring from India</header>
+      <div class="content">
+        <textarea id="bringFromIndia" rows="3" placeholder="E.g., specialty spices, regional snacks, ayurvedic products..."></textarea>
+        <p class="note">Optional: Mention brands, quantities, or reasons.</p>
+      </div>
+    </div>
+
+    <!-- Respondent info -->
+    <div class="card">
+      <header>Family & Contact (Optional)</header>
+      <div class="content">
+        <div class="flex">
+          <input type="text" id="familyName" placeholder="Family name" />
+          <input type="number" id="familySize" min="1" placeholder="Family size" />
+          <input type="text" id="contact" placeholder="Email or phone" />
+        </div>
+        <p class="note">This helps us tailor quantities and follow up if needed.</p>
+      </div>
+    </div>
+
+    <!-- Submit -->
+    <div class="footer-actions">
+      <div>
+        <button class="btn" id="submitBtn" type="button">Submit Survey</button>
+        <button class="btn secondary" id="resetBtn" type="button">Reset</button>
+      </div>
+      <div id="status" class="status muted">Not submitted</div>
+    </div>
+
+    <!-- Summary Output -->
+    <div class="card" id="summaryCard" style="display:none;">
+      <header>Submission Summary (Client-side)</header>
+      <div class="content">
+        <div id="summary" class="summary"></div>
+        <p class="note">You can wire this JSON to your backend (fetch/XHR) or store it in a sheet.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== Configurable starter grocery list =====
+    const STARTER_ITEMS = [
+      { name: "Rice (Basmati/Sona Masoori)", unit: "kg" },
+      { name: "Wheat Flour (Atta)", unit: "kg" },
+      { name: "Toor Dal (Arhar)", unit: "kg" },
+      { name: "Urad Dal", unit: "kg" },
+      { name: "Chana Dal", unit: "kg" },
+      { name: "Moong Dal", unit: "kg" },
+      { name: "Cooking Oil", unit: "litre" },
+      { name: "Ghee", unit: "kg" },
+      { name: "Sugar", unit: "kg" },
+      { name: "Jaggery (Gur)", unit: "kg" },
+      { name: "Salt", unit: "kg" },
+      { name: "Masala/Spice Mix", unit: "pack" },
+      { name: "Turmeric", unit: "pack" },
+      { name: "Chilli Powder", unit: "pack" },
+      { name: "Cumin/Jeera", unit: "pack" },
+      { name: "Coriander/Dhania", unit: "pack" },
+      { name: "Mustard Seeds", unit: "pack" },
+      { name: "Tamarind", unit: "pack" },
+      { name: "Tea/Coffee", unit: "pack" },
+      { name: "Poha", unit: "kg" },
+      { name: "Rava/Sooji", unit: "kg" },
+      { name: "Besan (Gram Flour)", unit: "kg" },
+      { name: "Dry Fruits (Almonds/Cashews)", unit: "pack" },
+      { name: "Snacks/Namkeen", unit: "pack" }
+    ];
+
+    // ===== Render items grid =====
+    const itemsGrid = document.getElementById("itemsGrid");
+    function renderItemRow({name, qty = "", unit = "kg"}) {
+      const row = document.createElement("div");
+      row.className = "grid";
+      row.innerHTML = `
+        <div><input type="text" class="item-name" value="${name}" placeholder="Item name" /></div>
+        <div><input type="number" class="item-qty" min="0" step="0.25" value="${qty}" placeholder="Qty" /></div>
+        <div>
+          <select class="item-unit">
+            <option value="kg" ${unit==="kg"?"selected":""}>kg</option>
+            <option value="g" ${unit==="g"?"selected":""}>g</option>
+            <option value="litre" ${unit==="litre"?"selected":""}>litre</option>
+            <option value="ml" ${unit==="ml"?"selected":""}>ml</option>
+            <option value="pack" ${unit==="pack"?"selected":""}>pack</option>
+            <option value="pcs" ${unit==="pcs"?"selected":""}>pcs</option>
+          </select>
+        </div>
+        <div class="remove-col">
+          <button type="button" class="btn secondary remove-btn">Remove</button>
+        </div>
+      `;
+      row.querySelector(".remove-btn").addEventListener("click", () => {
+        itemsGrid.removeChild(row);
+      });
+      itemsGrid.appendChild(row);
+    }
+    STARTER_ITEMS.forEach(item => renderItemRow(item));
+
+    // Add custom item
+    document.getElementById("addItemBtn").addEventListener("click", () => {
+      const name = document.getElementById("newItemName").value.trim();
+      const qty = document.getElementById("newItemQty").value.trim();
+      const unit = document.getElementById("newItemUnit").value;
+      if (!name) {
+        alert("Please enter an item name.");
+        return;
+      }
+      renderItemRow({ name, qty, unit });
+      document.getElementById("newItemName").value = "";
+      document.getElementById("newItemQty").value = "";
+      document.getElementById("newItemUnit").value = "kg";
+    });
+
+    // ===== Priority list (drag & drop) =====
+    const priorityList = document.getElementById("priorityList");
+    const PRIORITY_ITEMS = ["Rice", "Atta", "Dal/Pulses", "Oil", "Spices", "Tea/Coffee", "Sugar", "Salt", "Snacks"];
+    function renderPriority() {
+      PRIORITY_ITEMS.forEach(item => {
+        const li = document.createElement("li");
+        li.className = "priority-item";
+        li.draggable = true;
+        li.innerHTML = `
+          <span class="handle">↕</span>
+          <span>${item}</span>
+          <span class="pill">Must-have</span>
+        `;
+        priorityList.appendChild(li);
+      });
+    }
+    renderPriority();
+
+    let dragSrcEl = null;
+    function handleDragStart(e) {
+      dragSrcEl = this;
+      e.dataTransfer.effectAllowed = "move";
+      e.dataTransfer.setData("text/html", this.innerHTML);
+      this.style.opacity = "0.5";
+    }
+    function handleDragOver(e) {
+      if (e.preventDefault) e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      return false;
+    }
+    function handleDragEnter() { this.classList.add("over"); }
+    function handleDragLeave() { this.classList.remove("over"); }
+    function handleDrop(e) {
+      if (e.stopPropagation) e.stopPropagation();
+      if (dragSrcEl !== this) {
+        dragSrcEl.innerHTML = this.innerHTML;
+        this.innerHTML = e.dataTransfer.getData("text/html");
+        attachDnDHandlers(dragSrcEl);
+        attachDnDHandlers(this);
+      }
+      return false;
+    }
+    function handleDragEnd() {
+      this.style.opacity = "1";
+      [...priorityList.children].forEach(li => li.classList.remove("over"));
+    }
+    function attachDnDHandlers(el) {
+      el.addEventListener("dragstart", handleDragStart, false);
+      el.addEventListener("dragenter", handleDragEnter, false);
+      el.addEventListener("dragover", handleDragOver, false);
+      el.addEventListener("dragleave", handleDragLeave, false);
+      el.addEventListener("drop", handleDrop, false);
+      el.addEventListener("dragend", handleDragEnd, false);
+    }
+    [...priorityList.children].forEach(attachDnDHandlers);
+
+    // ===== Submit & reset =====
+    const statusEl = document.getElementById("status");
+    const summaryCard = document.getElementById("summaryCard");
+    const summaryEl = document.getElementById("summary");
+
+    function collectFormData() {
+      // Items
+      const rows = [...itemsGrid.querySelectorAll(".grid")];
+      const items = rows.map(r => ({
+        item: r.querySelector(".item-name").value.trim(),
+        quantity: r.querySelector(".item-qty").value ? parseFloat(r.querySelector(".item-qty").value) : 0,
+        unit: r.querySelector(".item-unit").value
+      })).filter(x => x.item);
+
+      // Validate quantities (optional)
+      const invalid = items.some(x => x.quantity < 0);
+      if (invalid) {
+        alert("Quantity cannot be negative.");
+        return null;
+      }
+
+      // Missing items
+      const missing = document.getElementById("missingItems").value.trim();
+
+      // Priority (read order)
+      const priorities = [...priorityList.children].map(li => li.children[1].textContent);
+
+      // Bring from India
+      const bring = document.getElementById("bringFromIndia").value.trim();
+
+      // Family info
+      const familyName = document.getElementById("familyName").value.trim();
+      const familySize = document.getElementById("familySize").value ? parseInt(document.getElementById("familySize").value, 10) : null;
+      const contact = document.getElementById("contact").value.trim();
+
+      return {
+        timestamp: new Date().toISOString(),
+        family: { name: familyName || null, size: familySize || null, contact: contact || null },
+        items,
+        missingItems: missing || null,
+        priorities,
+        bringFromIndia: bring || null
+      };
+    }
+
+    document.getElementById("submitBtn").addEventListener("click", () => {
+      const data = collectFormData();
+      if (!data) return;
+
+      // Show status & summary
+      statusEl.textContent = "Submitted (client-side).";
+      statusEl.className = "status ok";
+      summaryCard.style.display = "block";
+      summaryEl.textContent = JSON.stringify(data, null, 2);
+
+      // TODO: Send to server or spreadsheet
+      // fetch('/api/submit', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(data) })
+      //   .then(res => res.json())
+      //   .then(() => { statusEl.textContent = "Submitted to server."; })
+      //   .catch(() => { statusEl.textContent = "Saved locally (server unavailable)."; statusEl.className = "status warn"; });
+    });
+
+    document.getElementById("resetBtn").addEventListener("click", () => {
+      // Reset fields
+      document.getElementById("missingItems").value = "";
+      document.getElementById("bringFromIndia").value = "";
+      document.getElementById("familyName").value = "";
+      document.getElementById("familySize").value = "";
+      document.getElementById("contact").value = "";
+      statusEl.textContent = "Not submitted";
+      statusEl.className = "status muted";
+      summaryCard.style.display = "none";
+      summaryEl.textContent = "";
+
+      // Reset items grid to starter list
+      itemsGrid.innerHTML = "";
+      STARTER_ITEMS.forEach(item => renderItemRow(item));
+
+      // Reset priority order
+      priorityList.innerHTML = "";
+      renderPriority();
+      [...priorityList.children].forEach(attachDnDHandlers);
+    });
+  </script>
+</body>
+</html>
